@@ -1,0 +1,285 @@
+# Chapter 13: Forms and Authentication
+
+Think about the first time you hit a "Login Wall." You're trying to scrape a specialized forum for antique watch collectors. You can see the list of threads, but as soon as you try to click on a specific post to see the high-resolution photos, a big blue box appears: "Please log in to view this content."
+
+It can feel as if you've been invited to a party, but then stopped at the door because you weren't on the list.
+
+At first, you might try to be clever. You log in with your Chrome browser, and then you manually copy the URL of an internal post. You paste it into your spider's `start_urls`. But when you run the spider, it just returns the login page again. It's like you're trying to walk through a wall. Your browser knows who you are, but your spider is a total stranger.
+
+You might spend the next two days trying to "trick" the website. You try to copy-paste the "Cookies" from your browser into your code. It works for about ten minutes, and then the website "logs you out" and your spider crashes. You might feel frustrated, as if you're losing a battle against a security system you don't yet understand.
+
+Then, you discover `FormRequest.from_response()`.
+
+It's like being handed a master key. You'll realize that your spider doesn't need to "trick" the website; it just needs to act like a real user. It can visit the login page, find the username and password boxes, type the information in, and hit the "Submit" button just like you would. Once you learn how to handle forms and keep a "Session" alive, those login walls won't feel like walls anymore; they'll just be another door that you know how to open.
+
+In this chapter, you're going to learn how to open those doors.
+
+---
+
+## Introduction
+
+Much of the web's most valuable data is hidden behind forms and authentication. Whether it's a social network, a private database, or a personalized dashboard, you often need to "prove" who you are before you can see the content.
+
+In this chapter, we're going to master the art of interacting with HTML forms. We'll learn how Scrapy handles **FormRequests**, how to find hidden security tokens (like CSRF tokens), and how to manage **Cookies** so your spider remains "logged in" as it crawls from page to page.
+
+## Understanding HTML Forms
+
+Before we can use Scrapy to submit a form, we need to know what a form looks like in HTML. A typical login form looks like this:
+
+```html
+<form action="/login" method="POST">
+    <input type="hidden" name="csrf_token" value="abc123xyz">
+    <input type="text" name="username" placeholder="Username">
+    <input type="password" name="password" placeholder="Password">
+    <button type="submit">Login</button>
+</form>
+```
+
+### The Key Parts:
+1.  **`action`**: The URL where the data is sent.
+2.  **`method`**: Usually `POST` (sending data) rather than `GET` (requesting data).
+3.  **`name`**: The ID for each piece of data (e.g., `username`). This is what Scrapy needs to know.
+4.  **Hidden Inputs**: These are the "secret" fields that the website uses for security. You must include them in your request, or the login will fail.
+
+## FormRequest Basics
+
+In Scrapy, we use the `scrapy.FormRequest` class to send data to a form.
+
+The absolute easiest way to handle logins is using the `from_response()` method. This method is brilliant because it automatically finds all the hidden fields (like CSRF tokens) and includes them for you.
+
+```python
+import scrapy
+
+class LoginSpider(scrapy.Spider):
+    name = 'login_spider'
+    start_urls = ['https://quotes.toscrape.com/login']
+
+    def parse(self, response):
+        """
+        Step 1: Visit the login page and fill out the form.
+        """
+        return scrapy.FormRequest.from_response(
+            response,
+            formdata={'username': 'myuser', 'password': 'mypassword'},
+            callback=self.after_login
+        )
+
+    def after_login(self, response):
+        """
+        Step 2: Check if login was successful.
+        """
+        if "Logout" in response.text:
+            self.logger.info("Login successful!")
+            # Now we can visit the restricted pages
+            yield scrapy.Request('https://quotes.toscrape.com/secret', callback=self.parse_secret)
+```
+
+## Finding CSRF Tokens
+
+**CSRF** stands for Cross-Site Request Forgery. It's a security measure that ensures the form submission is coming from the actual website and not a malicious bot.
+
+Most modern websites include a hidden field with a random code (the token). If you try to send a `POST` request without that code, the server will reject you. This is why `from_response()` is so powerful it "scrapes" the login page first to find that code before it tries to log in.
+
+> [!WARNING]
+> **Scrapy Doc Gap: CSRF in JS-heavy Forms**
+> A common source of frustration is when `from_response()` works on one site but fails on another. This usually happens because the CSRF token is being generated by **JavaScript** or an AJAX call *after* the page loads. 
+> 
+> Since Scrapy doesn't run JS by default, `from_response()` will look at the HTML, find an empty or missing token, and your login will fail. In these cases, you’ll need to combine the techniques from this chapter with the "Network Tab" skills from Chapter 14 to find where the token is actually coming from.
+
+### Manual CSRF Extraction
+
+When `from_response` fails, do it manually:
+
+```python
+def parse_login(self, response):
+    # 1. Extract the token manually
+    token = response.css('input[name="csrf_token"]::attr(value)').get()
+    
+    # 2. Or extract from a JavaScript variable
+    # var csrf = "xyz123";
+    if not token:
+        token = response.re_first(r'csrf = "(.*?)";')
+
+    # 3. Construct the request manually
+    yield scrapy.FormRequest(
+        url='https://example.com/login',
+        formdata={
+            'username': 'user',
+            'password': 'pass',
+            'csrf_token': token
+        },
+        callback=self.after_login
+    )
+```
+
+## Advanced Authentication: JWT and Bearer Tokens
+
+Modern Single Page Applications (SPAs) often don't use cookies. They use **content-type: application/json** and send a **JWT (JSON Web Token)** back.
+
+```python
+import json
+
+def login(self, response):
+    return scrapy.Request(
+        url='https://api.example.com/v1/login',
+        method='POST',
+        headers={'Content-Type': 'application/json'},
+        body=json.dumps({'base': {'username': 'u', 'password': 'p'}}),
+        callback=self.handle_token
+    )
+
+def handle_token(self, response):
+    data = json.loads(response.text)
+    token = data['token'] # e.g., "eyJhbGciOi..."
+    
+    # Now use this token in ALL future requests
+    yield scrapy.Request(
+        url='https://api.example.com/private-data',
+        headers={'Authorization': f'Bearer {token}'},
+        callback=self.parse_private
+    )
+```
+
+## Managing Multiple Sessions (CookieJars)
+
+What if you need to scrape as two different users *at the same time*?
+Scrapy supports **Cookie Jars**.
+
+```python
+def start_requests(self):
+    # Seller Login
+    yield scrapy.FormRequest(
+        url='...',
+        formdata={'user': 'seller'},
+        meta={'cookiejar': 1},  # Jar #1
+        callback=self.parse_seller
+    )
+    
+    # Buyer Login
+    yield scrapy.FormRequest(
+        url='...',
+        formdata={'user': 'buyer'},
+        meta={'cookiejar': 2},  # Jar #2
+        callback=self.parse_buyer
+    )
+
+def parse_seller(self, response):
+    # This request uses Jar #1 automatically
+    yield scrapy.Request(url='...', meta={'cookiejar': 1})
+```
+
+## Two-Factor Authentication (2FA)
+
+**The Hard Truth:** You cannot magically bypass 2FA (SMS/Authenticator App/Email code).
+
+**Strategies:**
+1. **Disable 2FA**: Ask the client to create a "Service Account" without 2FA.
+2. **Session Hijacking**: 
+   - Login manually in your browser (solve 2FA).
+   - Export cookies (using an extension like "EditThisCookie").
+   - Feed cookies to Scrapy.
+
+```python
+# settings.py
+DEFAULT_REQUEST_HEADERS = {
+    'Cookie': 'session_id=...; auth_token=...' 
+}
+```
+
+> [!TIP]
+> **Pro Tip: The TOTP Library**
+> If the 2FA uses a standard Authenticator App (Google/Authy), you can generate the code in Python!
+> 
+> ```python
+> import pyotp
+> # Specific secret key provided by the site (during setup)
+> totp = pyotp.TOTP('JBSWY3DPEHPK3PXP')
+> current_code = totp.now() # "123456"
+> ```
+
+## Maintaining Sessions
+
+By default, Scrapy handles **Cookies** for you. This means that once your spider logs in, Scrapy "remembers" the session. Every subsequent request your spider makes will include the login cookie automatically.
+
+### Checking for redirected logins
+Sometimes, a website will redirect you back to the login page if your session expires. You can handle this by checking the `response.url` in your callback methods. If the URL is back at `/login`, you know something went wrong.
+
+## HTTP Authentication
+
+Some websites use a simpler, older type of security called **Basic Auth**. This usually pops up as a browser window asking for a username and password before you even see the page.
+
+In Scrapy, you don't even need a form for this. You just include the credentials in the URL:
+```python
+start_urls = ['https://user:password@example.com/protected']
+```
+
+## Testing Authentication
+
+Logins are notoriously difficult to debug because you can't see the "browser" working.
+**Pro Tip:** Use the `view(response)` command in the Scrapy Shell *after* you attempt a login. If the shell shows you the "Welcome, User!" page, you know your logic is correct.
+
+## Common Login Issues
+
+### 1. Multiple Forms on the Page
+If `from_response` picks the "Search" form instead of "Login":
+
+```python
+# Select by ID
+scrapy.FormRequest.from_response(response, formid='login-form', ...)
+
+# Select by Index (0 is first form)
+scrapy.FormRequest.from_response(response, formnumber=1, ...)
+
+# Select by Name
+scrapy.FormRequest.from_response(response, formname='login', ...)
+```
+
+### 2. ViewState (ASP.NET Sites)
+Older Microsoft sites use a huge hidden field called `__VIEWSTATE`.
+**Good news:** `FormRequest.from_response()` handles this automatically!
+**Bad news:** If you construct the request manually, you MUST extract and send `__VIEWSTATE` and `__EVENTVALIDATION`, or it will fail 100% of the time.
+
+### 3. Hidden "HoneyPot" Fields
+Some forms have hidden fields that *humans* can't see, but bots fill out.
+- `name="email"` (Hidden)
+- `name="real_email"` (Visible)
+
+If you fill the hidden "email" field, you get blocked. `from_response` might fill it blindly!
+**Solution:**
+```python
+formdata={
+    'username': 'user', 
+    'password': 'pass',
+    'honey_field': '' # Explicitly leave empty
+}
+```
+2.  **JavaScript Logins:** Some modern sites use complex JavaScript to log in. In those cases, a simple `FormRequest` might not work, and we'll need to usetools like Playwright (Chapter 14).
+3.  **Captchas:** If a website shows you a "Select all the traffic lights" box, a simple spider cannot pass it. You should always look for an API or ask for permission before trying to bypass a Captcha.
+
+## Chapter Summary
+
+**What we covered:**
+- Forms are how we send data (like logins) to a server using `POST` requests.
+- `scrapy.FormRequest.from_response()` is the friendliest way to handle logins and hidden tokens.
+- CSRF tokens are hidden security codes that must be included in your request.
+- Scrapy handles sessions and cookies automatically to keep you logged in.
+- Always verify your login success by checking for a "Logout" link or a specific username on the response page.
+
+**Key code:**
+```python
+yield scrapy.FormRequest.from_response(
+    response,
+    formdata={'user': 'admin', 'pass': '1234'},
+    callback=self.after_login
+)
+```
+
+**Previous chapter:**
+[Chapter 12: Advanced Spider Patterns](./chapter_12_advanced_spider_patterns.md)
+
+**Next chapter:**
+We've conquered login walls, but there's an even bigger dragon to slay. Many modern websites use **JavaScript** to build their entire page *after* it loads. In the next chapter, we're going to learn how to scrape the dynamic web using **Playwright**.
+
+---
+
+**End of Chapter 13**
