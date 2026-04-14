@@ -75,8 +75,6 @@ What if you want to save your data with the date of the crawl? Scrapy allows you
 ```
 This will create a folder with the spider's name and a file with the current timestamp. It's an incredibly powerful way to keep your historical data organized.
 
-This will create a folder with the spider's name and a file with the current timestamp. It's an incredibly powerful way to keep your historical data organized.
-
 ### Multiple Simultaneous Exports
 
 Since Scrapy 2.1, you aren't limited to one output. You can save to JSON and CSV at the same time:

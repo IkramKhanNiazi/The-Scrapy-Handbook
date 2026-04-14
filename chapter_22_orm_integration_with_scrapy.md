@@ -49,7 +49,7 @@ Now, let's build the "bridge" in `pipelines.py`. This pipeline will handle the c
 from sqlalchemy.orm import sessionmaker
 from my_project.models import Quote, create_engine, Base
 
-class SQLAlchmeyPipeline:
+class SQLAlchemyPipeline:
     def __init__(self, db_url):
         self.engine = create_engine(db_url)
         # Create the tables if they don't exist
@@ -65,10 +65,13 @@ class SQLAlchmeyPipeline:
         Base.metadata.create_all(self.engine)
 
     def process_item(self, item, spider):
-        # We use a "Scoped Session" for thread safety or just a new session per item
         session = self.Session()
         try:
-            # ... business logic ...
+            quote = Quote(
+                text=item.get('text'),
+                author=item.get('author')
+            )
+            session.add(quote)
             session.commit()
         except:
             session.rollback()
@@ -108,21 +111,6 @@ class AsyncORMPipeline:
                 # Auto-commit happens at end of 'async with' block
         return item
 ```
-        
-        # Create a new Quote object from our item data
-        quote = Quote(
-            text=item.get('text'),
-            author=item.get('author')
-        )
-
-        try:
-            session.add(quote)
-            session.commit()
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
 
 > [!IMPORTANT]
 > **Scrapy Doc Gap: The session.close() Essential**
@@ -130,15 +118,11 @@ class AsyncORMPipeline:
 > 
 > If you forget to call `session.close()` in the `finally` block, that connection remains "checked out" forever. Eventually, your spider will have used up every available connection in the pool, and any new request will wait forever or crash. Always ensure your sessions are closed, even if an error occurs earlier in the method!
 
-        return item
-```
-
 ## Update vs. Insert: The Professional way
 
 In Chapter 20, we talked about "UPSERTs." In SQLAlchemy, we use a pattern called `merge()` or `on_conflict_do_update`. This ensures that if you scrape the same quote tomorrow, you don't save a duplicate; you just update the existing record.
 
 ```python
-# Professional Update Logic
 # Professional Update Logic
 stmt = select(Quote).where(Quote.text == item['text'])
 existing_quote = session.execute(stmt).scalar_one_or_none()

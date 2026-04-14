@@ -103,18 +103,7 @@ class PostgresPipeline:
 > One of the most common mistakes is opening and closing a database connection inside the `process_item` method. 
 > 
 > In PostgreSQL, a connection is a heavy operation that starts a new process on the server. If your spider scrapes 10 items per second, you’ll be asking Postgres to create 600 processes a minute. This will quickly exhaust the `max_connections` limit and crash your database. Always open the connection once in `open_spider` and close it once in `close_spider`.
-```python
-    def process_item(self, item, spider):
-        # ... standard sync implementation ... 
-        # (See "Twisted Adbapi" section below for the pro version)
-        return item
-```
 
-> [!CAUTION]
-> **Scrapy Doc Gap: The Postgres Connection Trap**
-> One of the most common mistakes is opening and closing a database connection inside the `process_item` method. 
-> 
-> In PostgreSQL, a connection is a heavy operation that starts a new process on the server. If your spider scrapes 10 items per second, you’ll be asking Postgres to create 600 processes a minute. This will quickly exhaust the `max_connections` limit and crash your database. Always open the connection once in `open_spider` and close it once in `close_spider`.
 
 ## Step 4: Configuration
 

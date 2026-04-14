@@ -66,8 +66,6 @@ Middlewares live in the `middlewares.py` file of your project. Here is the basic
 4. `process_start_requests(start_requests, spider)`: Initial requests
 
 ```python
-
-```python
 # middlewares.py
 from scrapy import signals
 
@@ -78,6 +76,9 @@ class MySpiderMiddleware:
             spider.logger.warning("Site is down!")
         return None  # None means 'keep going'
 
+    def process_spider_output(self, response, result, spider):
+        # This runs AFTER your spider yields items/requests
+        for r in result:
             yield r
 
     def process_start_requests(self, start_requests, spider):

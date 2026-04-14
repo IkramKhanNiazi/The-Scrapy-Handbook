@@ -101,7 +101,6 @@ You cannot have a fast database without indexes. If you are upserting by `url`, 
 > A common trap in MongoDB development is "dumping" everything and figuring it out later. While MongoDB allows this, you shouldn't. 
 > 
 > You should still use **Scrapy Items** to define what your data *should* look like. This creates a "view" of your data that remains consistent even if the website changes. Without this, your database will end up with "Data Rot" years of records where the same field is named `price`, then `Price`, then `cost`. Use Scrapy Items to enforce consistency at the source!
-```
 
 ## Elasticsearch Basics
 

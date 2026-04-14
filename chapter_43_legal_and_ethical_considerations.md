@@ -52,7 +52,7 @@ While a ToS isn't always legally binding (a court has to decide if you "agreed" 
 
 If you are scraping data about people (names, emails, social media handles), you must follow **Privacy Laws**.
 *   **GDPR (Europe):** Extremely strict. You cannot "process" the personal data of EU citizens without a specific legal reason.
-*   **CCPA (California)::** Similar to GDPR, giving users the "right to be forgotten."
+*   **CCPA (California):** Similar to GDPR, giving users the "right to be forgotten."
 *   **EU TDM Directive (Article 4):** A 2026 update to European law allows "Text and Data Mining" (scraping) for commercial purposes **unless** the website owner has explicitly opted out using a machine-readable format (like an "opt-out" tag in the `robots.txt`).
 
 **The Golden Rule:** Anonymous product data is safe. Personal user data is high-risk.
@@ -90,7 +90,7 @@ If you get a letter like the one I described in my story:
 - When in doubt, ask for permission or buy the data through an official API.
 
 **Previous chapter:**
-[Chapter 42: Project 3: Real Estate Map Visualizer](./chapter_42_project_3_real_estate_map_visualizer.md)
+[Chapter 42: Building APIs with Your Scraped Data](./chapter_42_building_apis.md)
 
 **Next chapter:**
 The web is changing faster than ever. From AI-powered selectors to "Headless" API economies, the future of scraping looks very different from the past. In the next chapter, we're going to explore **The Future of Scraping** learning how to adapt to a world of AI and the next generation of web technologies.

@@ -98,19 +98,6 @@ class DynamicSpider(scrapy.Spider):
 One of the most common JS patterns is "Infinite Scroll." You scroll down, and more items appear. Scrapy-Playwright can handle this by executing custom JavaScript inside the browser:
 
 ```python
-def start_requests(self):
-    yield scrapy.Request(
-        url,
-        meta={
-            "playwright": True,
-            "playwright_page_methods": [
-                # Scroll to the bottom and wait 2 seconds
-                {"method": "evaluate", "args": "window.scrollTo(0, document.body.scrollHeight)"},
-                {"method": "wait_for_timeout", "args": 2000},
-            ],
-        },
-    )
-```python
 from scrapy_playwright.page import PageMethod
 
 def start_requests(self):
@@ -120,9 +107,9 @@ def start_requests(self):
             "playwright": True,
             "playwright_page_methods": [
                 PageMethod("wait_for_selector", "div.product-card"),
-                # Execute custom scrolling funtion
+                # Execute custom scrolling function
                 PageMethod("evaluate", "window.scrollBy(0, document.body.scrollHeight)"),
-                PageMethod("wait_for_timeout", 2000), # Wait for content to load
+                PageMethod("wait_for_timeout", 2000),  # Wait for content to load
             ],
         },
     )

@@ -47,6 +47,7 @@ def process_response(self, request, response, spider):
         spider.logger.warning("WE ARE BANNED! Changing strategy...")
         # You could return a new Request here to try again!
     return response
+```
 
 ### The 3 Return Values (Critical Knowledge)
 What you return from `process_request` determines the fate of the request:
@@ -55,7 +56,6 @@ What you return from `process_request` determines the fate of the request:
    * *Use Case:* Loading a cached page from a database instead of making a network call.
 3. `Request` object: STOP! Discard the current request and schedule this *new* one instead.
    * *Use Case:* You detect a "Login Required" cookie is missing, so you redirect the spider to the Login Page first.
-```
 
 ## Real-World Use Case: User-Agent Rotation
 

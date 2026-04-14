@@ -65,8 +65,6 @@ class MyDistributedSpider(RedisSpider):
 
     def parse(self, response):
         yield {'url': response.url}
-    def parse(self, response):
-        yield {'url': response.url}
 ```
 
 ### Option B: Keeping Standard Spiders (Preferred)

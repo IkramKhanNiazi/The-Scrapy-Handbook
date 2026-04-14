@@ -94,7 +94,6 @@ IMAGES_THUMBS = {
 }
 ```
 Scrapy will save the original image *plus* the two thumbnails in subfolders.
-```
 
 ## Custom Image File Names
 

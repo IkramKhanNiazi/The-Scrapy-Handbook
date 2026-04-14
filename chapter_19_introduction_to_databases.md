@@ -133,7 +133,7 @@ Once your data is in the database, you use SQL to talk to it. Here are the "Big 
 
 ## Database Best Practices
 
-*   **Indexes are Magic:** If your database gets slow when searching for "Author," you can add an **Index**. This is like the index at the back of a book it makes searches nearly instantaneous.
+*   **Indexes are Magic:** If your database gets slow when searching for "Author," you can add an **Index**. This is like the index at the back of a book—it makes searches nearly instantaneous.
 *   **Use Transactions:** Always use `conn.commit()` after you make changes. This ensures that either *all* your changes are saved or *none* of them are (if something crashes).
 *   **One Table, One Topic:** Don't try to cram everything into one giant table. Have one table for "Quotes" and a different table for "Authors."
 

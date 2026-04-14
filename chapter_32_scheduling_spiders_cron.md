@@ -103,7 +103,7 @@ The solution is `flock` (File Lock). It ensures that only one instance of the sc
 ```
 
 ## Containerized Scheduling (Docker + Cron)
-If you are using Docker (Chapter 31), you don't use the host's cron. You use a "Sidecar" container.
+If you are using Docker (as in Chapter 4), you don't use the host's cron. You use a "Sidecar" container.
 
 ```dockerfile
 # Dockerfile

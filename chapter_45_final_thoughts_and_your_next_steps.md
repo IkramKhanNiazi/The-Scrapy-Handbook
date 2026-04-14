@@ -43,7 +43,7 @@ As you leave these pages, make sure your "Utility Belt" contains these essential
 | :--- | :--- | :--- |
 | **Engine** | Scrapy | The indestructible core. |
 | **Browser** | Playwright | For the 5% of sites that need JS. |
-| **Storage** | PostgreSQL + MobgoDB | Relational facts + NoSQL flexibility. |
+| **Storage** | PostgreSQL + MongoDB | Relational facts + NoSQL flexibility. |
 | **Scaling** | Redis | To turn a single spider into a swarm. |
 | **Intelligence** | Ollama / OpenAI | To turn HTML into meaning. |
 | **Hardening** | Pydantic | To ensure your data never breaks downstream. |

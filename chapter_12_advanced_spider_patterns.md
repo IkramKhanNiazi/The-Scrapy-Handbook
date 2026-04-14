@@ -58,9 +58,6 @@ class MyCrawlSpider(CrawlSpider):
 > In a normal spider, you *must* use the name `parse`. In a `CrawlSpider`, you **must NOT** use the name `parse`. 
 > 
 > The `CrawlSpider` uses the `parse` method internally to handle all the complex logic of following links and checking rules. If you define your own `parse` method in a `CrawlSpider`, you will "override" the framework's brain, and your rules will stop working. Always use a different name like `parse_item` or `parse_details` for your callbacks.
-```
-
-```
 
 ### Advanced LinkExtractor Parameters
 
