@@ -1,0 +1,6 @@
+---
+title: The ultimate 2026 Scrapy guide
+author: M Ikram Ullah Khan
+rights: MIT License
+language: en-US
+...
